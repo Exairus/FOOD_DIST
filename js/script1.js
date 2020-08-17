@@ -1,119 +1,116 @@
 window.addEventListener("DOMContentLoaded", () => {
 
-    const tabs = document.querySelectorAll(".tabheader__item"),
-          tabsParent = document.querySelector(".tabheader__items"),
-          content = document.querySelectorAll(".tabcontent");
+    // tabs
+
+    const tabs = document.querySelectorAll(".tabcontent"); //выбор всех табов
+    const items = document.querySelectorAll(".tabheader__item"); //выбор всех ссылок
+    const itemsParent = document.querySelector(".tabheader__items"); // выбор родителя для делегирования
+
+    // в начале нужно скрыть весь контент
 
     function hideContent() {
-        content.forEach( (item) => {
-            item.style.display = "none";
+        tabs.forEach( (tab) => {
+            tab.classList.add("hide");
+            tab.classList.remove("show");
         });
 
-        tabs.forEach( (item) => {
+        items.forEach( (item) => {
             item.classList.remove("tabheader__item_active");
         });
     }
 
     function showContent(i = 0) {
-        content[i].style.display = "block";
-        tabs[i].classList.add("tabheader__item_active");
+        tabs[i].classList.remove("hide");
+        tabs[i].classList.add("show");
+        items[i].classList.add("tabheader__item_active")
     }
 
     hideContent();
     showContent();
 
-    tabsParent.addEventListener("click", (event) => {
-
+    itemsParent.addEventListener("click", (event) => {
         if (event.target && event.target.classList.contains("tabheader__item")) {
-            tabs.forEach( (tab, i) => {
-                if (event.target == tab) {
+            items.forEach( (item, i) => {
+                if (event.target == item) {
                     hideContent();
                     showContent(i);
                 }
             });
         }
-
     });
 
-    //timer
+    // timer
 
-    const deadline = "2020-09-11";
+    const deadline = "2020-11-03";
 
-    function getTimeRemaining(endtime) {
-        const t = Date.parse(endtime) - Date.parse(new Date());
-
-        const days = Math.floor(t / (1000 * 60 * 60 * 24)),
+    function timeRemaining(endtime) {
+        const t = Date.parse(endtime) - Date.parse(new Date()),
+              days = Math.floor(t / (1000 * 60 * 60 * 24)),
               hours = Math.floor(t / (1000 * 60 * 60) % 24),
               minutes = Math.floor(t / (1000 * 60) % 60),
               seconds = Math.floor(t / 1000 % 60);
-        
+
         return {
-            timestamp: t,
-            days: days,
-            hours: hours,
-            minutes: minutes,
-            seconds: seconds
+            'stamp': t,
+            'days': days,
+            'hours': hours,
+            'minutes': minutes,
+            'seconds': seconds
         };
     }
 
-    function getZero(num) {
-        if (num >= 0 && num < 10) {
-            return `0${num}`;
+    function addZero(number) {
+        if (number > 1 && number <= 9) {
+            return `0${number}`;
         } else {
-            return num;
+            return number;
         }
     }
-
-    function setTimer(selector, endtime) {
-        const timer = document.querySelector(selector);
-
-        const days = timer.querySelector("#days"),
+    
+    function addTime(selector, endtime) {
+        const timer = document.querySelector(selector),
+              days = timer.querySelector("#days"),
               hours = timer.querySelector("#hours"),
               minutes = timer.querySelector("#minutes"),
-              seconds = timer.querySelector("#seconds");
-              interval = setInterval(updateClock, 1000);
+              seconds = timer.querySelector("#seconds"),
+              interval = setInterval(updateTimer, 1000);
+        
+        function updateTimer() {
+            const timerObj = timeRemaining(deadline);
 
-        updateClock();
-
-        function updateClock() {
-            const t = getTimeRemaining(endtime);
-
-            days.innerHTML = getZero(t.days);
-            hours.innerHTML = getZero(t.hours);
-            minutes.innerHTML = getZero(t.minutes);
-            seconds.innerHTML = getZero(t.seconds);
+            days.innerHTML = addZero(timerObj.days);
+            hours.innerHTML = addZero(timerObj.hours);
+            minutes.innerHTML = addZero(timerObj.minutes);
+            seconds.innerHTML = addZero(timerObj.seconds);
         }
+        updateTimer();
     }
 
-    setTimer(".timer", deadline);
+    addTime(".timer", deadline);
 
     // modal
 
-    const modal = document.querySelector(".modal"),
-          modalTrigger = document.querySelectorAll("button[data-modal]"),
-          close = document.querySelector("div[data-close]");
-    
-    // при клике на кнопки с data атрибутом открывать модальное окно
+    const btns = document.querySelectorAll("button[data-modal]"),
+          modal = document.querySelector(".modal"),
+          close = document.querySelector(".modal__close");
 
     function openModal() {
         modal.classList.add("show");
         modal.classList.remove("hide");
         document.body.style.overflow = "hidden";
-        // если пользователь кликнул на кнопку, вызывающее модальное окно
-        // до того, как оно само сработает, отменяем интервал
-        clearInterval(modalTimerId);
+
+        // clearInterval(intervalId);
     }
 
-    modalTrigger.forEach((btn) => {
-        btn.addEventListener("click", openModal);
-    });
-
-    
     function closeModal() {
         modal.classList.add("hide");
         modal.classList.remove("show");
         document.body.style.overflow = "";
     }
+    
+    btns.forEach( (btn) => {
+        btn.addEventListener("click", openModal);
+    });
 
     close.addEventListener("click", closeModal);
 
@@ -123,47 +120,52 @@ window.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    document.addEventListener("keydown", (e) => {
-        if (e.code === "Escape" && modal.classList.contains("show")) {
+    document.addEventListener("keydown", (event) => {
+        if (event.code == "Escape" && modal.classList.contains("show")) {
             closeModal();
         }
     });
 
-   
-    // const modalTimerId = setTimeout(openModal, 3000);
+    // const intervalId = setTimeout(openModal, 5000);
 
-    // если пользователь долистал до конца - показать модальное окно
+    //если долистать до конца открыть модальное
+    
+    function showModalByScroll() {
+        if (window.pageYOffset + document.documentElement.clientHeight >= 
+                document.documentElement.scrollHeight) {
+            openModal();
 
-    function showModalByScroll () {
-        if (window.pageYOffset + document.documentElement.clientHeight 
-            >= document.documentElement.scrollHeight) {
-                openModal();
-                // удалить обработчик события после первого раза, как он сработал
-                window.removeEventListener("scroll", showModalByScroll);
-            }
-        
+            window.removeEventListener("scroll", showModalByScroll);      
+        }
     }
 
     window.addEventListener("scroll", showModalByScroll);
 
-    // cards
 
-    class MenuCard {
-
-        constructor(src, alt, title, descr, price, parentSelector) {
+    const menuItem = document.querySelector(".menu__item"),
+          src = menuItem.querySelector("img[src]"),
+          alt = menuItem.querySelector("img[alt]"),
+          title = menuItem.querySelectorAll(".menu__item-subtitle"),
+          descr = menuItem.querySelector(".menu__item-descr"),
+          price = menuItem.querySelector(".menu__item-total");
+    
+    class MenuItem {
+        constructor(src, alt, title, descr, price, parent, ...divClasses) {
             this.src = src;
             this.alt = alt;
             this.title = title;
             this.descr = descr;
             this.price = price;
-            this.parentSelector = document.querySelector(parentSelector);
+            this.parent = document.querySelector(parent);
+            this.divClasses = divClasses;
+
+            this.createElem();
         }
 
-        render() {
-            const menuItem = document.createElement("div");
+        createElem() {
+            const div = document.createElement("div");
 
-            menuItem.innerHTML = `
-            <div class="menu__item">
+            div.innerHTML = `
                 <img src=${this.src} alt=${this.alt}>
                 <h3 class="menu__item-subtitle">${this.title}</h3>
                 <div class="menu__item-descr">${this.descr}</div>
@@ -172,21 +174,36 @@ window.addEventListener("DOMContentLoaded", () => {
                     <div class="menu__item-cost">Цена:</div>
                     <div class="menu__item-total"><span>${this.price}</span> грн/день</div>
                 </div>
-            </div>
             `;
-
-            this.parentSelector.append(menuItem);
+            
+            if (this.divClasses.length === 0) {
+                this.div = "menu__item";
+                div.classList.add(this.div);
+            } else {
+                this.divClasses.forEach( (className) => {
+                    div.classList.add(className);
+                });
+            }
+            this.parent.append(div);    
         }
-
     }
 
-    new MenuCard(
+    const newElem = new MenuItem(
         "img/tabs/vegy.jpg",
         "vegy",
         'Меню "Фитнес"',
         'Меню "Фитнес" - это новый подход к приготовлению блюд: больше свежих овощей и фруктов. Продукт активных и здоровых людей. Это абсолютно новый продукт с оптимальной ценой и высоким качеством!',
-        229,
+        '229',
         '.menu .container'
-    ).render();
+    );
+
+
+    
+
+    
+
+
+
+
 
 });
