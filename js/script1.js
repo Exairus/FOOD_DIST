@@ -91,8 +91,7 @@ window.addEventListener("DOMContentLoaded", () => {
     // modal
 
     const btns = document.querySelectorAll("button[data-modal]"),
-          modal = document.querySelector(".modal"),
-          close = document.querySelector(".modal__close");
+          modal = document.querySelector(".modal");
 
     function openModal() {
         modal.classList.add("show");
@@ -112,10 +111,11 @@ window.addEventListener("DOMContentLoaded", () => {
         btn.addEventListener("click", openModal);
     });
 
-    close.addEventListener("click", closeModal);
 
     modal.addEventListener("click", (event) => {
-        if (event.target === modal) {
+        // у нас есть атрибут data-close, но т.к. ему значение не передано
+        // getAttribute выдаст пустую строку
+        if (event.target === modal || event.target.getAttribute("data-close") == "") {
             closeModal();
         }
     });
@@ -126,7 +126,7 @@ window.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // const intervalId = setTimeout(openModal, 5000);
+    const intervalId = setTimeout(openModal, 50000);
 
     //если долистать до конца открыть модальное
     
@@ -197,13 +197,90 @@ window.addEventListener("DOMContentLoaded", () => {
         '.menu .container'
     );
 
+    // forms 
 
-    
+    const forms = document.querySelectorAll("form");
 
-    
+    const message = {
+        loading: "img/form/spinner.svg",
+        success: "Форма отправлена! Скоро мы с вами свяжемся",
+        failure: "Что то пошло не так..."
+    };
 
+    forms.forEach((item) => {
+        sendForm(item);
+    });
 
+    function sendForm(form) {
+        form.addEventListener("submit", (e) => {
+            e.preventDefault();
 
+            // вставка спиннера при загрузке формы
+            const spinner = document.createElement("img");
+            spinner.src = message.loading;
+            spinner.style.cssText = `
+                display: block;
+                margin: 0 auto;
+            `;
+            form.insertAdjacentHTML("afterend", spinner);
+
+            const request = new XMLHttpRequest();
+            request.open("POST", "server.php");
+            request.setRequestHeader("Content-type", "application/json");
+
+            // подготовка формы к отправке на сервер
+            const formData = new FormData(form);
+ 
+            // нужно создать новый объект, записать туда значения объекта FormData
+            // т.к. его самого нельзя переформатировать в json, и уже новый объект
+            // переформатировать в объект json и отправить на сервер
+
+            const obj = {};
+            formData.forEach((value, key) => {
+                obj[key] = value;
+            });
+            const json = JSON.stringify(obj);
+            request.send(json);
+
+            // как только форма полностью отправилась...
+            request.addEventListener("load", () => {
+                if (request.status === 200) {
+                    // показать ответ от сервера и сообщение
+                    console.log(request.response);
+                    showSuccessMessage(message.success);
+                    form.reset();
+                    spinner.remove();
+                } else {
+                    console.log(message.failure);
+                }
+            });
+        });
+    }
+
+    function showSuccessMessage(message) {
+        const prevModal = document.querySelector(".modal__dialog");
+        prevModal.classList.add("hide");
+        openModal();
+        
+        const newModal = document.createElement("div");
+        newModal.classList.add("modal__dialog");
+        newModal.innerHTML = `
+            <div class="modal__content">
+                <div class="modal__close" data-close>x</div>
+                <div class="modal__title">${message}</div>
+            </div>
+                
+        `;
+        document.querySelector(".modal").append(newModal);
+
+        // удалить форму через 5 секунд и закрыть модальное окно
+        setTimeout( () => {
+            prevModal.classList.add("show");
+            prevModal.classList.remove("hide");
+            newModal.remove();
+            closeModal();
+        }, 5000);
+    }
 
 
 });
