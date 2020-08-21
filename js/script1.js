@@ -224,35 +224,30 @@ window.addEventListener("DOMContentLoaded", () => {
             `;
             form.insertAdjacentHTML("afterend", spinner);
 
-            const request = new XMLHttpRequest();
-            request.open("POST", "server.php");
-            request.setRequestHeader("Content-type", "application/json");
-
             // подготовка формы к отправке на сервер
             const formData = new FormData(form);
  
-            // нужно создать новый объект, записать туда значения объекта FormData
-            // т.к. его самого нельзя переформатировать в json, и уже новый объект
-            // переформатировать в объект json и отправить на сервер
 
             const obj = {};
             formData.forEach((value, key) => {
                 obj[key] = value;
             });
-            const json = JSON.stringify(obj);
-            request.send(json);
 
-            // как только форма полностью отправилась...
-            request.addEventListener("load", () => {
-                if (request.status === 200) {
-                    // показать ответ от сервера и сообщение
-                    console.log(request.response);
-                    showSuccessMessage(message.success);
-                    form.reset();
-                    spinner.remove();
-                } else {
-                    console.log(message.failure);
-                }
+            fetch("server.php", {
+                method: "POST",
+                headers: {
+                    "Content-type": "application/json"
+                },
+                body: JSON.stringify(obj)
+            }).then(data => data.text())
+            .then((data) => {
+                console.log(data);
+                showSuccessMessage(message.success);
+                spinner.remove();
+            }).catch(() => {
+                console.log(message.failure);
+            }).finally(() => {
+                form.reset();
             });
         });
     }
