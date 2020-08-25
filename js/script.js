@@ -370,24 +370,17 @@ window.addEventListener("DOMContentLoaded", () => {
         current.textContent = slideIndex;
     }
 
-    if (slides.length < 10) {
-        current.textContent = `0${slideIndex}`;
-    } else {
-        current.textContent = slideIndex;
-    }
+    addZero(slides);
 
     slidesField.style.width = slides.length * 100 + "%";
     slidesField.style.display = "flex";
     slidesField.style.transition = "0.5s all";
-
     slidesWrapper.style.overflow = "hidden";
-
 
     const slider = document.querySelector(".offer__slider"),
           indicators = document.createElement("ol");
     
     slider.style.position = "relative";
-
     indicators.classList.add("carousel-indicators");
     slider.append(indicators);
 
@@ -406,18 +399,24 @@ window.addEventListener("DOMContentLoaded", () => {
         dots.push(dot);
     }
 
-    // функция, которая принимает строку, превращала бы ее в число и избавляла бы от не чисел
-
-    
-
     // это нужно для того чтобы задать всем айтемам одинаковую ширину, если там есть неравные элементы
     slides.forEach(slide => {
         slide.style.width = width;
     });
 
+    // функция, которая принимает строку, превращала бы ее в число и избавляла бы от не чисел
     function strToNumeric(str) {
         return +str.replace(/\D/g, '');
     }
+
+    function addZero(slides) {
+        if (slides.length < 10) {
+            current.textContent = `0${slideIndex}`;
+        } else {
+            current.textContent = slideIndex;
+        }
+    }
+
 
     next.addEventListener("click", () => {
         //в регулярке то, что не явл. числом (px) удаляется
@@ -435,11 +434,7 @@ window.addEventListener("DOMContentLoaded", () => {
             slideIndex++;
         }
 
-        if (slides.length < 10) {
-            current.textContent = `0${slideIndex}`;
-        } else {
-            current.textContent = slideIndex;
-        }
+        addZero(slides);
 
         dots.forEach(dot => dot.style.opacity = ".5");
         dots[slideIndex - 1].style.opacity = "1";
@@ -460,11 +455,7 @@ window.addEventListener("DOMContentLoaded", () => {
             slideIndex--;
         }
 
-        if (slides.length < 10) {
-            current.textContent = `0${slideIndex}`;
-        } else {
-            current.textContent = slideIndex;
-        }
+        addZero(slides);
 
         dots.forEach(dot => dot.style.opacity = ".5");
         dots[slideIndex - 1].style.opacity = "1";
@@ -482,56 +473,117 @@ window.addEventListener("DOMContentLoaded", () => {
             dots.forEach(dot => dot.style.opacity = ".5");
             dots[slideIndex - 1].style.opacity = "1";
 
-            if (slides.length < 10) {
-                current.textContent = `0${slideIndex}`;
-            } else {
-                current.textContent = slideIndex;
-            }
+            addZero(slides);
         });
     });
 
+
+    // Calculator
+
+    const result = document.querySelector(".calculating__result span");
+
+    let sex, height, weight, age, ratio;
+
+    if (localStorage.getItem('sex')) {
+        sex = localStorage.getItem('sex');
+    } else {
+        sex = 'female';
+        localStorage.setItem('sex', 'female');
+    }
+
+    if (localStorage.getItem('ratio')) {
+        ratio = localStorage.getItem('ratio');
+    } else {
+        ratio = 1.375;
+        localStorage.setItem('ratio', 1.375);
+    }
+
+    function initLocalSettings(selector, activeClass) {
+        const elements = document.querySelectorAll(selector);
+
+        elements.forEach(elem => {
+            elem.classList.remove(activeClass);
+            if (elem.getAttribute("id") === localStorage.getItem("sex")) {
+                elem.classList.add(activeClass);
+            }
+            if (elem.getAttribute('data-ratio') === localStorage.getItem('ratio')) {
+                elem.classList.add(activeClass);
+            }
+        });
+    }
+    initLocalSettings(".calculating__choose_big div", "calculating__choose-item_active");
+    initLocalSettings("#gender div", "calculating__choose-item_active");
+
+    function calcTotal() {
+        if (!sex || !height || !weight || !age || !ratio) {
+            result.textContent = "____";
+            return;
+        }
+        if (sex === "female") {
+            result.textContent = Math.round((447.6 + (9.2 * weight) + (3.1 * height) - (4.3 * age)) * ratio);
+        } else {
+            result.textContent = Math.round((88.36 + (13.4 * weight) + (4.8 * height) - (5.7 * age)) * ratio);
+        }
+    }
+
+    calcTotal();
+
+    function getStaticInformation(selector, activeClass) {
+        const elements = document.querySelectorAll(selector);
+
+        elements.forEach(elem => {
+            elem.addEventListener("click", (e) => {
+                if (e.target.getAttribute("data-ratio")) {
+                    ratio = +e.target.getAttribute("data-ratio");
+                    localStorage.setItem('ratio', e.target.getAttribute("data-ratio"));
+                } else {
+                    sex = e.target.getAttribute("id");
+                    localStorage.setItem('sex', e.target.getAttribute("id"))
+                }
     
-
-
-
-
-
-
-
-    // showSlides(slideIndex);
-
     
-
-    // function showSlides(n) {
-        // if (n > slides.length) {
-        //     slideIndex = 1;
-        // }
-
-        // if (n < 1) {
-        //     slideIndex = slides.length;
-        // }
-
-    //     slides.forEach(item => item.style.display = "none");
-
-    //     slides[slideIndex - 1].style.display = "block";
-
-        // if (slides.length < 10) {
-        //     current.textContent = `0${slideIndex}`;
-        // } else {
-        //     current.textContent = slideIndex;
-        // }
-    // }
-
-    // function plusSlides(n) {
-    //     showSlides(slideIndex += n);
-    // }
-
-    // prev.addEventListener("click", () => {
-    //     plusSlides(-1);
-    // });
-
-    // next.addEventListener("click", () => {
-    //     plusSlides(1);
-    // });
+                elements.forEach((elem) => {
+                    elem.classList.remove(activeClass);
+                });
     
+                e.target.classList.add(activeClass);
+    
+                calcTotal();
+            });
+        });
+
+    }
+
+    getStaticInformation(".calculating__choose_big div", "calculating__choose-item_active");
+    getStaticInformation("#gender div", "calculating__choose-item_active");
+
+    function getDynamicInformation(selector) {
+        const input = document.querySelector(selector);
+
+        input.addEventListener("input", () => {
+            if (input.value.match(/\D/g)) {
+                input.style.border = "1px solid red";
+            } else {
+                input.style.border = "none";
+            }
+
+            switch(input.getAttribute("id")) {
+                case "height":
+                    height = +input.value;
+                    break;
+                case "weight":
+                    weight = +input.value;
+                case "age":
+                    age = +input.value;
+            }
+            calcTotal();
+        });
+        
+    }
+
+    getDynamicInformation("#height");
+    getDynamicInformation("#weight");
+    getDynamicInformation("#age");
+
+
 });
