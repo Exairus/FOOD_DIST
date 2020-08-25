@@ -203,20 +203,18 @@ window.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    const getResource = async (url) => {
-        const res = await fetch(url);
+    
 
-        if (!res.ok) {
-            // объект ошибки
-            throw new Error(`Could not fetch ${url}, status: ${res.status}`);
-        }
+    // getResource('http://localhost:3000/menu')
+    //     .then(data => {
+    //         data.forEach(({img, altimg, title, descr, price}) => {
+    //             new MenuCard(img, altimg, title, descr, price, '.menu .container').render();
+    //         });
+    //     });
 
-        return res.json();
-    };
-
-    getResource('http://localhost:3000/menu')
+    axios.get('http://localhost:3000/menu')
         .then(data => {
-            data.forEach(({img, altimg, title, descr, price}) => {
+            data.data.forEach(({img, altimg, title, descr, price}) => {
                 new MenuCard(img, altimg, title, descr, price, '.menu .container').render();
             });
         });
@@ -272,7 +270,18 @@ window.addEventListener("DOMContentLoaded", () => {
 
         return await res.json();
     };
+    
+    const getResource = async (url) => {
+        const res = await fetch(url);
 
+        if (!res.ok) {
+            // объект ошибки
+            throw new Error(`Could not fetch ${url}, status: ${res.status}`);
+        }
+
+        return res.json();
+    };
+    
     function bindPostData(form) {
         form.addEventListener("submit", (e) => {
             e.preventDefault();
@@ -330,5 +339,199 @@ window.addEventListener("DOMContentLoaded", () => {
     fetch('http://localhost:3000/menu')
         .then(data => data.json())
         .then(res => console.log(res));
+
+    
+    /* slider 
+    1. Получить все элементы слайдера
+    2. Определить индекс, который будет определять номер текущего слайда
+    3. Функция, занимаюся показом слайдов, состоит из двух функций:
+        - показ определенного слайда + скрытие других + условие, переход с 4 на 1 слайд и наоборот
+        - обработчик события на стрелки, вправо - след. слайд, увеличение индекса и влево аналогично
+    */
+
+    const slides = document.querySelectorAll(".offer__slide"),
+          prev = document.querySelector(".offer__slider-prev"),
+          next = document.querySelector(".offer__slider-next"),
+          total = document.querySelector("#total"),
+          current = document.querySelector("#current"),
+          slidesWrapper = document.querySelector(".offer__slider-wrapper"),
+          slidesField = document.querySelector(".offer__slider-inner"),
+          width = window.getComputedStyle(slidesWrapper).width;
+
+
+    let slideIndex = 1;
+    let offset = 0;
+
+    if (slides.length < 10) {
+        total.textContent = `0${slides.length}`;
+        current.textContent = `0${slideIndex}`;
+    } else {
+        total.textContent = slides.length;
+        current.textContent = slideIndex;
+    }
+
+    if (slides.length < 10) {
+        current.textContent = `0${slideIndex}`;
+    } else {
+        current.textContent = slideIndex;
+    }
+
+    slidesField.style.width = slides.length * 100 + "%";
+    slidesField.style.display = "flex";
+    slidesField.style.transition = "0.5s all";
+
+    slidesWrapper.style.overflow = "hidden";
+
+
+    const slider = document.querySelector(".offer__slider"),
+          indicators = document.createElement("ol");
+    
+    slider.style.position = "relative";
+
+    indicators.classList.add("carousel-indicators");
+    slider.append(indicators);
+
+    const dots = [];
+
+    for (i = 0; i < slides.length; i++) {
+        const dot = document.createElement("li");
+        dot.classList.add("dot");
+        dot.setAttribute('data-slide-to', i + 1);
+        indicators.append(dot);
+
+        if (i == 0) {
+            dot.style.opacity = 1;
+        }
+
+        dots.push(dot);
+    }
+
+    // функция, которая принимает строку, превращала бы ее в число и избавляла бы от не чисел
+
+    
+
+    // это нужно для того чтобы задать всем айтемам одинаковую ширину, если там есть неравные элементы
+    slides.forEach(slide => {
+        slide.style.width = width;
+    });
+
+    function strToNumeric(str) {
+        return +str.replace(/\D/g, '');
+    }
+
+    next.addEventListener("click", () => {
+        //в регулярке то, что не явл. числом (px) удаляется
+        if (offset == strToNumeric(width) * (slides.length - 1)) {
+            offset = 0;
+        } else {
+            offset += strToNumeric(width);
+        }
+
+        slidesField.style.transform = `translateX(-${offset}px)`;
+
+        if (slideIndex == slides.length) {
+            slideIndex = 1;
+        } else {
+            slideIndex++;
+        }
+
+        if (slides.length < 10) {
+            current.textContent = `0${slideIndex}`;
+        } else {
+            current.textContent = slideIndex;
+        }
+
+        dots.forEach(dot => dot.style.opacity = ".5");
+        dots[slideIndex - 1].style.opacity = "1";
+    });
+
+    prev.addEventListener("click", () => {
+        if (offset == 0) {
+            offset = strToNumeric(width) * (slides.length - 1);
+        } else {
+            offset -= strToNumeric(width);
+        }
+        
+        slidesField.style.transform = `translateX(-${offset}px)`;
+
+        if (slideIndex == 1) {
+            slideIndex = slides.length;
+        } else {
+            slideIndex--;
+        }
+
+        if (slides.length < 10) {
+            current.textContent = `0${slideIndex}`;
+        } else {
+            current.textContent = slideIndex;
+        }
+
+        dots.forEach(dot => dot.style.opacity = ".5");
+        dots[slideIndex - 1].style.opacity = "1";
+    });
+
+    dots.forEach(dot => {
+        dot.addEventListener("click", (e) => {
+            const slideTo = e.target.getAttribute("data-slide-to");
+
+            slideIndex = slideTo;
+            offset = strToNumeric(width) * (slideTo - 1);
+
+            slidesField.style.transform = `translateX(-${offset}px)`;
+
+            dots.forEach(dot => dot.style.opacity = ".5");
+            dots[slideIndex - 1].style.opacity = "1";
+
+            if (slides.length < 10) {
+                current.textContent = `0${slideIndex}`;
+            } else {
+                current.textContent = slideIndex;
+            }
+        });
+    });
+
+    
+
+
+
+
+
+
+
+    // showSlides(slideIndex);
+
+    
+
+    // function showSlides(n) {
+        // if (n > slides.length) {
+        //     slideIndex = 1;
+        // }
+
+        // if (n < 1) {
+        //     slideIndex = slides.length;
+        // }
+
+    //     slides.forEach(item => item.style.display = "none");
+
+    //     slides[slideIndex - 1].style.display = "block";
+
+        // if (slides.length < 10) {
+        //     current.textContent = `0${slideIndex}`;
+        // } else {
+        //     current.textContent = slideIndex;
+        // }
+    // }
+
+    // function plusSlides(n) {
+    //     showSlides(slideIndex += n);
+    // }
+
+    // prev.addEventListener("click", () => {
+    //     plusSlides(-1);
+    // });
+
+    // next.addEventListener("click", () => {
+    //     plusSlides(1);
+    // });
     
 });
